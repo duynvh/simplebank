@@ -45,7 +45,7 @@ func (e eqCreateUserParamsMatcher) String() string {
 }
 
 func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher {
-	return eqCreateUserParamsMatcher{arg: arg, password: password}
+	return eqCreateUserParamsMatcher{arg, password}
 }
 
 func TestCreateUserAPI(t *testing.T) {
@@ -71,7 +71,6 @@ func TestCreateUserAPI(t *testing.T) {
 					FullName: user.FullName,
 					Email:    user.Email,
 				}
-
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(arg, password)).
 					Times(1).
@@ -114,8 +113,8 @@ func TestCreateUserAPI(t *testing.T) {
 					Times(1).
 					Return(db.User{}, &pq.Error{Code: "23505"})
 			},
-			checkResponse: func(recoder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusForbidden, recoder.Code)
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, recorder.Code)
 			},
 		},
 		{
@@ -218,9 +217,12 @@ func TestLoginUserAPI(t *testing.T) {
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
 					Return(user, nil)
+				store.EXPECT().
+					CreateSession(gomock.Any(), gomock.Any()).
+					Times(1)
 			},
-			checkResponse: func(recoder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, recoder.Code)
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
 			},
 		},
 		{
